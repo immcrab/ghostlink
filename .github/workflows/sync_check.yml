@@ -1,0 +1,36 @@
+name: Update from GhostLink
+
+on:
+  schedule:
+    # This runs every hour. You can change the cron timing.
+    - cron: '0 * * * *' 
+  workflow_dispatch: # Allows you to run it manually for testing
+
+jobs:
+  check_and_update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout your repo
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.MY_GITHUB_TOKEN }}
+
+      - name: Fetch Remote Content
+        run: |
+          # Download the latest version directly to the target file
+          curl -s "https://cdn.jsdelivr.net/gh/virtuan4-max/ghostlinkhub@latest/ghostlinksinglefile.html?v=$(date +%s)" -o latest_ghost.HTML
+
+      - name: Commit and Push if changed
+        run: |
+          git config --global user.name "GhostLink Bot"
+          git config --global user.email "bot@github.com"
+          
+          # Check if there are any changes
+          if [[ -n "$(git status --porcelain)" ]]; then
+            # We specifically add just the new file to avoid committing anything else by accident
+            git add latest_ghost.HTML
+            git commit -m "Automated Update: Sync with GhostLink source"
+            git push
+          else
+            echo "No changes detected."
+          fi
